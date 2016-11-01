@@ -20,7 +20,7 @@ public class DaoMySql
     private static final String DEFAULT_DB_URL = "jdbc:mysql://localhost:3306/test?useSSL=false";
     private static final String DEFAULT_USER = "root";
     private static final String DEFAULT_PASS = "pass";
-    private static final String ADD_NAMES_QUERY = "INSERT INTO Names(eng_word) VALUES (?);";
+    private static final String ADD_NAMES_QUERY = "INSERT INTO Names(eng_word, ara_word) VALUES (?, ?);";
     // private static final String GET_TOTAL_COUNT_QUERY = "SELECT COUNT(*) FROM
     // Articles;";
 
@@ -54,7 +54,7 @@ public class DaoMySql
 	daoMySQL = this;
     }
 
-    public void add(String name)
+    public void add(String originalName, String translatedName)
     {
 	logger.debug("Adding article to MySql");
 	Connection connection = null;
@@ -70,8 +70,9 @@ public class DaoMySql
 	    logger.debug("Preparing statement");
 	    PreparedStatement preparedStatement = connection.prepareStatement(ADD_NAMES_QUERY);
 
-	    logger.debug("Setting statement parameter");
-	    preparedStatement.setString(1, name);
+	    logger.debug("Setting statement parameters");
+	    preparedStatement.setString(1, originalName);
+	    preparedStatement.setString(2, translatedName);
 
 	    logger.debug("Executing statement");
 	    preparedStatement.executeUpdate();
