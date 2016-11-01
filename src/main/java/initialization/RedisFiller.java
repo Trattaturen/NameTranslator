@@ -13,9 +13,13 @@ import redis.clients.jedis.Jedis;
 public class RedisFiller
 {
     private Jedis jedis;
+    private final String QUEUE_NAME;
+    private final String FILE_PATH;
 
-    public RedisFiller(Jedis jedis) {
+    public RedisFiller(Jedis jedis, String QUEUE_NAME, String FILE_PATH) {
     	this.jedis = jedis;
+	this.QUEUE_NAME = QUEUE_NAME;
+	this.FILE_PATH = FILE_PATH;
     }
 
     final static Logger logger = Logger.getLogger(RedisFiller.class);
@@ -39,11 +43,11 @@ public class RedisFiller
 
     public void fillUpQueue()
     {
-	for (String current : getFromFile("/home/user/names_test.txt"))
+	for (String current : getFromFile(FILE_PATH))
 	{
-	    jedis.sadd("names", current);
+	    jedis.sadd(QUEUE_NAME, current);
 	}
-	System.out.println(jedis.scard("names"));
+	System.out.println(jedis.scard(QUEUE_NAME));
 	logger.info("Redis queue filled up");
 	jedis.close();
     }

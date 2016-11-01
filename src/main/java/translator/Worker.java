@@ -1,18 +1,13 @@
 package translator;
 
-import java.io.IOException;
-
-import org.apache.log4j.Logger;
-
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import com.squareup.okhttp.*;
+import org.apache.log4j.Logger;
 
 import Manager.Manager;
+
+import java.io.IOException;
 
 /**
  * Callable that handles translation via Yandex API
@@ -38,10 +33,10 @@ public class Worker implements Runnable
 
     public Worker(Manager manager) {
 	logger.debug("Initializing Translator");
-	this.manager = manager;
 	this.jsonParser = new JsonParser();
 	// Simple http client library
 	this.client = new OkHttpClient();
+	this.manager = manager;
     }
 
     @Override
