@@ -55,7 +55,7 @@ public class DaoMySql
 	daoMySQL = this;
     }
 
-    public void add(List<String> names)
+    public void add(String name)
     {
 	logger.debug("Adding article to MySql");
 	Connection connection = null;
@@ -64,16 +64,15 @@ public class DaoMySql
 	{
 	    logger.debug("Getting JDBC driver");
 	    Class.forName(driver);
+
 	    logger.debug("Getting connection");
 	    connection = DriverManager.getConnection(url, user, pass);
+
 	    logger.debug("Preparing statement");
 	    PreparedStatement preparedStatement = connection.prepareStatement(ADD_NAMES_QUERY);
-	    logger.debug("Setting statement parameters");
-	    for (String current : names)
-	    {
-		preparedStatement.setString(1, current);
-		preparedStatement.addBatch();
-	    }
+
+	    logger.debug("Setting statement parameter");
+	    preparedStatement.setString(1, name);
 
 	    logger.debug("Executing statement");
 	    preparedStatement.executeUpdate();
