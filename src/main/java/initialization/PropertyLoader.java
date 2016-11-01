@@ -42,14 +42,58 @@ public class PropertyLoader
 	}
     }
 
-    public String getProperty(String propertyName)
+    public String getYandexUrl()
     {
-	return property.getProperty(propertyName);
+	return property.getProperty("yandex.url");
     }
 
-    public static void main(String[] args)
+    public String getYandexKey()
     {
-	System.out.println(PropertyLoader.getInstance().getProperty("yandex.key"));
+	return property.getProperty("yandex.key");
+    }
 
+    public String getYandexLimitDaily()
+    {
+	return property.getProperty("yandex.limit.daily");
+    }
+
+    public String getYandexLimitMonthly()
+    {
+	return property.getProperty("yandex.limit.daily");
+    }
+
+    public String getJdbcDriver()
+    {
+	return property.getProperty("jdbc.driver");
+    }
+
+    public String getMySqlUser()
+    {
+	return property.getProperty("db.user");
+    }
+
+    public String getMySqlPass()
+    {
+	return property.getProperty("db.password");
+    }
+
+    public String getQueueHost()
+    {
+	return property.getProperty("queue.host");
+    }
+
+    public String getQueueName()
+    {
+	return property.getProperty("queue.name");
+    }
+
+    public String getWorkersCount()
+    {
+	return property.getProperty("workers.count");
+    }
+
+    public String getFilePath()
+    {
+	return property.getProperty("file.path");
     }
 }

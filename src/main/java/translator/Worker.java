@@ -1,13 +1,18 @@
 package translator;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.squareup.okhttp.*;
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 
-import Manager.Manager;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 
-import java.io.IOException;
+import Manager.Manager;
 
 /**
  * Callable that handles translation via Yandex API
@@ -36,16 +41,20 @@ public class Worker implements Runnable
     public Worker(String yandexUrl, String yandexKey, int yandexDaiyLimit, int yandexMonthlyLimit, Manager manager) {
 	logger.debug("Initializing Translator");
 	this.jsonParser = new JsonParser();
-	// Simple http client library
 	this.client = new OkHttpClient();
+	this.yandexUrl = yandexUrl;
+	this.yandexKey = yandexKey;
+	this.yandexDailyLimit = yandexDaiyLimit;
+	this.yandexMonthlyLimit = yandexMonthlyLimit;
 	this.manager = manager;
+
     }
 
     @Override
     public void run()
     {
-	String toTranslate = manager.getNextWord();
-	while (toTranslate != null)
+	String toTranslate;
+	while ((toTranslate = manager.getNextWord()) != null)
 	{
 	    translatedSymbols += toTranslate.length();
 	    if (translatedSymbols >= yandexDailyLimit)
