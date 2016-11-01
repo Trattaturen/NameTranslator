@@ -17,21 +17,23 @@ public class Worker implements Runnable
 {
     final static Logger logger = Logger.getLogger(Worker.class);
 
-    private static final int YANDEX_LIMIT_DAILY = 1000000;
-    /// private static final int YANDEX_LIMIT_MONTHLY = 10000000;
-    private int translatedSymbols;
-    private static final String YANDEX_URL = "https://translate.yandex.net/api/v1.5/tr.json/translate?lang=en&key=";
-    private static final String YANDEX_KEY = "trnsl.1.1.20161020T120319Z.1eef5b89221649d3.79a09b2042b8bd60500bbce401514cbe065e930b";
     private static final MediaType REQUEST_MEDIA_TYPE_JSON = MediaType.parse("application/x-www-form-urlencoded");
     // Constants, needed to parse request/response
     private static final String TEXT_KEY_REQUEST = "text=";
     private static final String TEXT_KEY_RESPONSE = "text";
 
+    private static int translatedSymbols;
+
+    private String yandexUrl;
+    private String yandexKey;
+    private int yandexDailyLimit;
+    private int yandexMonthlyLimit;
+
     private JsonParser jsonParser;
     private OkHttpClient client;
     private Manager manager;
 
-    public Worker(Manager manager) {
+    public Worker(String yandexUrl, String yandexKey, int yandexDaiyLimit, int yandexMonthlyLimit, Manager manager) {
 	logger.debug("Initializing Translator");
 	this.jsonParser = new JsonParser();
 	// Simple http client library
@@ -46,7 +48,7 @@ public class Worker implements Runnable
 	while (toTranslate != null)
 	{
 	    translatedSymbols += toTranslate.length();
-	    if (translatedSymbols >= YANDEX_LIMIT_DAILY)
+	    if (translatedSymbols >= yandexDailyLimit)
 	    {
 		logger.error("Reached daily translation limit");
 		break;
@@ -56,7 +58,7 @@ public class Worker implements Runnable
 	    String translateRequest = TEXT_KEY_REQUEST + toTranslate;
 	    RequestBody body = RequestBody.create(REQUEST_MEDIA_TYPE_JSON, translateRequest);
 	    logger.debug("Building request");
-	    Request request = new Request.Builder().url(YANDEX_URL + YANDEX_KEY).post(body).build();
+	    Request request = new Request.Builder().url(yandexUrl + yandexKey).post(body).build();
 
 	    Response response;
 	    try
