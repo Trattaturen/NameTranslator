@@ -1,18 +1,11 @@
 package translator;
 
-import java.io.IOException;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-
-import org.apache.log4j.Logger;
-
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import com.squareup.okhttp.*;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
 
 /**
  * Callable that handles translation via Yandex API
