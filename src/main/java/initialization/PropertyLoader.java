@@ -52,14 +52,14 @@ public class PropertyLoader
 	return property.getProperty("yandex.key");
     }
 
-    public String getYandexLimitDaily()
+    public int getYandexLimitDaily()
     {
-	return property.getProperty("yandex.limit.daily");
+	return Integer.valueOf(property.getProperty("yandex.limit.daily"));
     }
 
-    public String getYandexLimitMonthly()
+    public int getYandexLimitMonthly()
     {
-	return property.getProperty("yandex.limit.daily");
+	return Integer.valueOf(property.getProperty("yandex.limit.daily"));
     }
 
     public String getJdbcDriver()
@@ -77,6 +77,11 @@ public class PropertyLoader
 	return property.getProperty("db.password");
     }
 
+    public String getMySqlUrl()
+    {
+	return property.getProperty("db.url");
+    }
+
     public String getQueueHost()
     {
 	return property.getProperty("queue.host");
@@ -87,9 +92,9 @@ public class PropertyLoader
 	return property.getProperty("queue.name");
     }
 
-    public String getWorkersCount()
+    public int getWorkersCount()
     {
-	return property.getProperty("workers.count");
+	return Integer.parseInt(property.getProperty("workers.count"));
     }
 
     public String getFilePath()

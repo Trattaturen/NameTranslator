@@ -74,6 +74,13 @@ public class Worker implements Runnable
 	    {
 		logger.debug("Posting request to yandex");
 		response = client.newCall(request).execute();
+		int responseCode = response.code();
+
+		if (responseCode == 404) {
+		    logger.error("Yandex API limit have been reached");
+		    break;
+		}
+
 		logger.debug("Parsing response");
 		JsonObject sourceObject = jsonParser.parse(response.body().string()).getAsJsonObject();
 		translated = sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString();
