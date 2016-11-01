@@ -1,3 +1,4 @@
+package Manager;
 import initialization.RedisFiller;
 import redis.clients.jedis.Jedis;
 import translator.Worker;
