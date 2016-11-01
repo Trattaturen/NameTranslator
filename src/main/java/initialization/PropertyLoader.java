@@ -44,7 +44,12 @@ public class PropertyLoader
 
     public String getProperty(String propertyName)
     {
-	return property.getProperty("db.host");
+	return property.getProperty(propertyName);
     }
 
+    public static void main(String[] args)
+    {
+	System.out.println(PropertyLoader.getInstance().getProperty("yandex.key"));
+
+    }
 }
