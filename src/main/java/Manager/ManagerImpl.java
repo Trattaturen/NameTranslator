@@ -42,7 +42,7 @@ public class ManagerImpl implements Manager
                         this.propertyLoader.getMySqlUser(),
                         this.propertyLoader.getMySqlPass());
 	this.jedis = new Jedis(this.propertyLoader.getQueueHost());
-        logger.info("Manager initiated");
+        logger.info("manager initiated");
     }
 
     public void startWorking()
@@ -54,7 +54,7 @@ public class ManagerImpl implements Manager
 
 	for (int i = 0; i < workersCount; i++)
 	{
-	    logger.info("Manager starts "+ i + " worker");
+	    logger.info("manager starts "+ i + " worker");
 	    this.service.submit(new Worker(this.propertyLoader.getYandexUrl(),
                             this.propertyLoader.getYandexKey(),
                             this));
