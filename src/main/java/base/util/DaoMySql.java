@@ -4,11 +4,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-public class DaoMySql
+public class DaoMySql implements Runnable
 {
     final static Logger logger = Logger.getLogger(DaoMySql.class);
 
@@ -19,15 +19,18 @@ public class DaoMySql
     private String user;
     private String pass;
 
-    public DaoMySql(String driver, String url, String user, String pass) {
+    private Map<String, String> words;
+
+    public DaoMySql(Map<String, String> words) {
 	logger.debug("Initializing MySql Dao");
-	this.driver = driver;
-	this.url = url;
-	this.user = user;
-	this.pass = pass;
+	this.driver = PropertyLoader.getInstance().getJdbcDriver();
+	this.url = PropertyLoader.getInstance().getMySqlUrl();
+	this.user = PropertyLoader.getInstance().getMySqlUser();
+	this.pass = PropertyLoader.getInstance().getMySqlPass();
+	this.words = words;
     }
 
-    public void add(List<String> originalName, List<String> translatedName)
+    private void add()
     {
 	logger.debug("Adding article to MySql");
 	Connection connection = null;
@@ -44,10 +47,10 @@ public class DaoMySql
 	    PreparedStatement preparedStatement = connection.prepareStatement(ADD_NAMES_QUERY);
 
 	    logger.debug("Setting statement parameters");
-	    for (int i = 0; i < originalName.size(); i++)
+	    for (Map.Entry<String, String> entry : words.entrySet())
 	    {
-		preparedStatement.setString(1, originalName.get(i));
-		preparedStatement.setString(2, translatedName.get(i));
+		preparedStatement.setString(1, entry.getKey());
+		preparedStatement.setString(2, entry.getValue());
 		preparedStatement.addBatch();
 	    }
 	    preparedStatement.executeBatch();
@@ -73,5 +76,10 @@ public class DaoMySql
 		logger.error("Exception while closing connection", se);
 	    }
 	}
+    }
+
+    @Override public void run()
+    {
+	add();
     }
 }

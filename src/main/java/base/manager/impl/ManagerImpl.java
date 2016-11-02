@@ -1,10 +1,13 @@
 package base.manager.impl;
 
 import base.adaptor.Adaptor;
-import initialization.PropertyLoader;
-import initialization.RedisFiller;
+import base.util.DaoMySql;
+import base.util.PropertyLoader;
+import base.util.RedisFiller;
 import redis.clients.jedis.Jedis;
 
+import java.net.MalformedURLException;
+import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -13,7 +16,6 @@ import java.util.Map;
 
 public class ManagerImpl extends UnicastRemoteObject implements base.manager.Manager
 {
-    private List<Adaptor> adaptors;
     private PropertyLoader propertyLoader;
     private Jedis jedis;
     private String queueName;
@@ -26,7 +28,6 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
     }
 
     private void init() {
-        this.adaptors = new ArrayList<>();
         this.propertyLoader = PropertyLoader.getInstance();
 
         this.queueName = this.propertyLoader.getQueueName();
@@ -38,11 +39,12 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
                         this.propertyLoader.getQueueName(),
                         this.propertyLoader.getFilePath())
                         .fillUpQueue();
+
+        exportToRmi();
     }
 
     @Override public void addAdaptor(Adaptor adaptor) throws RemoteException
     {
-        this.adaptors.add(adaptor);
         adaptor.init(this.propertyLoader.getYandexUrl(),
                         this.propertyLoader.getYandexKey(),
                         this.propertyLoader.getWorkersCount());
@@ -51,7 +53,9 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
 
     @Override public void onJobExecuted(Map<String, String> job, Adaptor adaptor) throws RemoteException
     {
-        //todo push to sql
+        Thread pushToSql = new Thread(new DaoMySql(job));
+        pushToSql.start();
+
         giveJobToAdaptor(adaptor);
     }
 
@@ -79,6 +83,15 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
 
     public void exportToRmi()
     {
-
+        String address = "//" + this.propertyLoader.getManagerRmiHost() + ":"
+                        + this.propertyLoader.getManagerRmiPort() + "/"
+                        + this.propertyLoader.getManagerRmiName();
+        try
+        {
+            Naming.rebind(address, this);
+        } catch (RemoteException | MalformedURLException e)
+        {
+            e.printStackTrace();
+        }
     }
 }
