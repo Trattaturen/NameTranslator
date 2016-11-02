@@ -1,6 +1,9 @@
 package translator;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -46,10 +49,10 @@ public class Worker implements Runnable
     @Override
     public void run()
     {
-	String[] toTranslate;
+	List<String> toTranslate;
 	while ((toTranslate = manager.getNextWord()) != null)
 	{
-	    String translated = null;
+	    List<String> translated = null;
 	    logger.debug("Creating request body");
 	    String translateRequest = TEXT_KEY_REQUEST + String.join("|", toTranslate);
 	    RequestBody body = RequestBody.create(REQUEST_MEDIA_TYPE_JSON, translateRequest);
@@ -71,13 +74,13 @@ public class Worker implements Runnable
 
 		logger.debug("Parsing response");
 		JsonObject sourceObject = jsonParser.parse(response.body().string()).getAsJsonObject();
-		translated = sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString();
+		translated = Arrays.asList(sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString().split("\\|"));
 		logger.debug("Got request from yandex");
 	    } catch (IOException e)
 	    {
 		logger.warn("Exception while translating", e);
 	    }
-	    manager.submitTranslation(toTranslate, translated);
+	    manager.submitTranslation(toTranslate, Collections.reverse(translated));
 	}
 
     }
