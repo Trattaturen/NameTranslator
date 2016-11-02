@@ -62,6 +62,7 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
     @Override
     public void executeJob(List<String> job) throws RemoteException
     {
+	logger.info("Adaptor starting new Workers");
 	this.service = Executors.newFixedThreadPool(this.workersCount);
 	this.job = job;
 	for (int i = 0; i < workersCount; i++)
@@ -72,6 +73,7 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 
     public void continueJob()
     {
+	logger.info("Continuing working with new key " + yandexKey);
 	this.service = Executors.newFixedThreadPool(this.workersCount);
 	for (int i = 0; i < workersCount; i++)
 	{
@@ -79,8 +81,20 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 	}
     }
 
-    public String getNextJob()
+    public synchronized String getNextJob()
     {
+	logger.info("Searching for new job for worker");
+	if (job.isEmpty())
+	{
+	    try
+	    {
+		logger.info("No more jobs in adaptor. Asking Manager for new job");
+		manager.onJobExecuted(translatedJob, this);
+	    } catch (RemoteException e)
+	    {
+		logger.info("Problems with RMI", e);
+	    }
+	}
 	return job.remove(0);
 
     }

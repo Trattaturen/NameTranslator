@@ -13,4 +13,5 @@ public interface Adaptor extends Remote
     void init(String yandexUrl, String yandexKey, int workersCount) throws RemoteException;
 
     void setYandexKey(String yandexKey) throws RemoteException;
+
 }

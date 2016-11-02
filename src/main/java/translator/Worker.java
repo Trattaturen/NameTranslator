@@ -15,7 +15,7 @@ import com.squareup.okhttp.Response;
 import base.adaptor.impl.AdaptorImpl;
 
 /**
- * Callable that handles translation via Yandex API
+ * Runnable that handles translation via Yandex API
  *
  */
 public class Worker implements Runnable
