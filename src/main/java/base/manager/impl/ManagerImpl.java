@@ -4,6 +4,7 @@ import base.adaptor.Adaptor;
 import base.util.DaoMySql;
 import base.util.PropertyLoader;
 import base.util.RedisFiller;
+import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
 
 import java.net.MalformedURLException;
@@ -16,6 +17,8 @@ import java.util.Map;
 
 public class ManagerImpl extends UnicastRemoteObject implements base.manager.Manager
 {
+    final static Logger logger = Logger.getLogger(ManagerImpl.class);
+
     private PropertyLoader propertyLoader;
     private Jedis jedis;
     private String queueName;
@@ -23,7 +26,6 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
 
     public ManagerImpl() throws RemoteException
     {
-        super();
         init();
     }
 
@@ -45,6 +47,7 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
 
     @Override public void addAdaptor(Adaptor adaptor) throws RemoteException
     {
+        logger.info("Adaptor connected");
         adaptor.init(this.propertyLoader.getYandexUrl(),
                         this.propertyLoader.getYandexKey(),
                         this.propertyLoader.getWorkersCount());
@@ -53,6 +56,7 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
 
     @Override public void onJobExecuted(Map<String, String> job, Adaptor adaptor) throws RemoteException
     {
+        logger.info("On job executed - pushing to sql");
         Thread pushToSql = new Thread(new DaoMySql(job));
         pushToSql.start();
 
@@ -62,12 +66,14 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
     @Override public String onKeyLimitReached(String apiKey) throws RemoteException
     {
         String freshKey = "";
-
+        logger.info("Demanding new key!!!!!!!!!!!!!!!!!");
+        System.out.println("Demanding new key!!!!!!!!!!!!!!!!!");
         return freshKey;
     }
 
     private void giveJobToAdaptor(Adaptor adaptor) throws RemoteException
     {
+        logger.info("Pushing job to adaptor");
         List<String> nextJob = new ArrayList<>();
         String word;
         int counter = 0;
@@ -89,6 +95,7 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
         try
         {
             Naming.rebind(address, this);
+            logger.info("Manager has been exported to RMI: " + address);
         } catch (RemoteException | MalformedURLException e)
         {
             e.printStackTrace();
