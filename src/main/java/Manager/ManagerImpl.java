@@ -3,6 +3,7 @@ package Manager;
 import dao.DaoMySql;
 import initialization.PropertyLoader;
 import initialization.RedisFiller;
+import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
 import translator.Worker;
 
@@ -13,6 +14,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ManagerImpl implements Manager
 {
+    final static Logger logger = Logger.getLogger(ManagerImpl.class);
+
     private ExecutorService service;
     private Lock lock;
     private DaoMySql dao;
@@ -23,7 +26,6 @@ public class ManagerImpl implements Manager
 
     public ManagerImpl() {
 	init();
-	startWorking();
     }
 
     private void init()
@@ -38,9 +40,10 @@ public class ManagerImpl implements Manager
                         this.propertyLoader.getMySqlUser(),
                         this.propertyLoader.getMySqlPass());
 	this.jedis = new Jedis(this.propertyLoader.getQueueHost());
+        logger.info("Manager initiated");
     }
 
-    private void startWorking()
+    public void startWorking()
     {
 	new RedisFiller(jedis,
                         this.propertyLoader.getQueueName(),
@@ -49,10 +52,10 @@ public class ManagerImpl implements Manager
 
 	for (int i = 0; i < workersCount; i++)
 	{
+	    logger.info("Manager starts "+ i + " worker");
 	    this.service.submit(new Worker(this.propertyLoader.getYandexUrl(),
                             this.propertyLoader.getYandexKey(),
-                            this.propertyLoader.getYandexLimitDaily(),
-                            this.propertyLoader.getYandexLimitMonthly(), this));
+                            this));
 	}
     }
 
@@ -61,6 +64,7 @@ public class ManagerImpl implements Manager
     {
 	lock.lock();
 	this.dao.add(origin, translation);
+        logger.info("Manager submitted translation " + translation + " for origin " + origin);
 	lock.unlock();
     }
 
@@ -69,6 +73,10 @@ public class ManagerImpl implements Manager
     {
 	lock.lock();
 	String nextWord = this.jedis.spop(this.propertyLoader.getQueueName());
+	if (jedis.dbSize() == 0) {
+	    jedis.close();
+	    service.shutdown();
+	}
 	lock.unlock();
 	return nextWord;
     }
