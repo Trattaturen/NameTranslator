@@ -27,27 +27,20 @@ public class Worker implements Runnable
     private static final String TEXT_KEY_REQUEST = "text=";
     private static final String TEXT_KEY_RESPONSE = "text";
 
-    private static int translatedSymbols;
-
     private String yandexUrl;
     private String yandexKey;
-    private int yandexDailyLimit;
-    private int yandexMonthlyLimit;
 
     private JsonParser jsonParser;
     private OkHttpClient client;
     private Manager manager;
 
-    public Worker(String yandexUrl, String yandexKey, int yandexDaiyLimit, int yandexMonthlyLimit, Manager manager) {
+    public Worker(String yandexUrl, String yandexKey, Manager manager) {
 	logger.debug("Initializing Translator");
 	this.jsonParser = new JsonParser();
 	this.client = new OkHttpClient();
 	this.yandexUrl = yandexUrl;
 	this.yandexKey = yandexKey;
-	this.yandexDailyLimit = yandexDaiyLimit;
-	this.yandexMonthlyLimit = yandexMonthlyLimit;
 	this.manager = manager;
-
     }
 
     @Override
@@ -56,12 +49,6 @@ public class Worker implements Runnable
 	String toTranslate;
 	while ((toTranslate = manager.getNextWord()) != null)
 	{
-	    translatedSymbols += toTranslate.length();
-	    if (translatedSymbols >= yandexDailyLimit)
-	    {
-		logger.error("Reached daily translation limit");
-		break;
-	    }
 	    String translated = null;
 	    logger.debug("Creating request body");
 	    String translateRequest = TEXT_KEY_REQUEST + toTranslate;
@@ -76,7 +63,8 @@ public class Worker implements Runnable
 		response = client.newCall(request).execute();
 		int responseCode = response.code();
 
-		if (responseCode == 404) {
+		if (responseCode == 404)
+		{
 		    logger.error("Yandex API limit have been reached");
 		    break;
 		}
