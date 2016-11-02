@@ -6,9 +6,11 @@ import java.util.List;
 
 public interface Adaptor extends Remote
 {
-    void returnJob(String origin, String translation) throws RemoteException;
-
     void setWorkersCount(int workersCount) throws RemoteException;
 
     void executeJob(List<String> job) throws RemoteException;
+
+    void init(String yandexUrl, String yandexKey, int workersCount) throws RemoteException;
+
+    void setYandexKey(String yandexKey) throws RemoteException;
 }

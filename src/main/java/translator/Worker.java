@@ -1,9 +1,6 @@
 package translator;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -15,7 +12,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
-import Manager.Manager;
+import base.adaptor.impl.AdaptorImpl;
 
 /**
  * Callable that handles translation via Yandex API
@@ -35,28 +32,26 @@ public class Worker implements Runnable
 
     private JsonParser jsonParser;
     private OkHttpClient client;
-    private Manager manager;
+    private AdaptorImpl adaptorImpl;
 
-    public Worker(String yandexUrl, String yandexKey, Manager manager) {
+    public Worker(String yandexUrl, String yandexKey, AdaptorImpl adaptorImpl) {
 	logger.debug("Initializing Translator");
 	this.jsonParser = new JsonParser();
 	this.client = new OkHttpClient();
-	this.yandexUrl = yandexUrl;
-	this.yandexKey = yandexKey;
-	this.manager = manager;
+	this.adaptorImpl = adaptorImpl;
     }
 
     @Override
     public void run()
     {
-	List<String> toTranslate;
+	String toTranslate;
 	logger.info("worker started");
-	while ((toTranslate = manager.getNextWord()) != null)
+	while ((toTranslate = adaptorImpl.getNextJob()) != null)
 	{
 	    logger.info("To translate " + toTranslate);
-	    List<String> translated = null;
+	    String translated = null;
 	    logger.debug("Creating request body");
-	    String translateRequest = TEXT_KEY_REQUEST + String.join(" | ", toTranslate);
+	    String translateRequest = TEXT_KEY_REQUEST + toTranslate;
 	    logger.info("translateRequest " + translateRequest);
 	    RequestBody body = RequestBody.create(REQUEST_MEDIA_TYPE_JSON, translateRequest);
 	    logger.debug("Building request");
@@ -73,22 +68,21 @@ public class Worker implements Runnable
 		if (responseCode == 404)
 		{
 		    logger.error("Yandex API limit have been reached");
+		    adaptorImpl.onKeyExpiration(toTranslate);
 		    break;
 		}
 
 		logger.debug("Parsing response");
 		JsonObject sourceObject = jsonParser.parse(response.body().string()).getAsJsonObject();
 		logger.info("source obj " + sourceObject);
-		translated = Arrays.asList(sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString().split("\\|"));
-	    	logger.info("Translated : " + translated);
-		Collections.reverse(translated);
-		logger.debug("Got request from yandex");
+		translated = sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString();
+		logger.info("Translated : " + translated);
 	    } catch (IOException e)
 	    {
 		logger.warn("Exception while translating", e);
 	    }
 
-	    manager.submitTranslation(toTranslate, translated);
+	    this.adaptorImpl.returnJob(toTranslate, translated);
 	}
 
     }
