@@ -11,7 +11,7 @@ public class DaoMySql
 {
     final static Logger logger = Logger.getLogger(DaoMySql.class);
 
-    private static final String ADD_NAMES_QUERY = "INSERT INTO Names(eng_word, ara_word) VALUES (?, ?);";
+    private static final String ADD_NAMES_QUERY = "INSERT INTO names_translation(eng_word, ara_word) VALUES (?, ?);";
 
     private String driver;
     private String url;
@@ -36,7 +36,7 @@ public class DaoMySql
 	    logger.debug("Getting JDBC driver");
 	    Class.forName(driver);
 
-	    logger.debug("Getting connection");
+	    logger.info("Getting connection url " + url + " user " + user + " pass "  + pass);
 	    connection = DriverManager.getConnection(url, user, pass);
 
 	    logger.debug("Preparing statement");
