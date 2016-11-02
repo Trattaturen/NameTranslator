@@ -51,12 +51,11 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
     @Override
     public void init(String yandexUrl, String yandexKey, int workersCount) throws RemoteException
     {
+	logger.info("Initializing executor service");
 	this.translatedJob = new HashMap<>();
 	this.yandexUrl = yandexUrl;
 	this.yandexKey = yandexKey;
 	this.workersCount = workersCount;
-	logger.info("Initializing executor service");
-
     }
 
     @Override
@@ -88,25 +87,27 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 	{
 	    try
 	    {
-		logger.info("No more jobs in adaptor. Asking Manager for new job");
+		logger.info("No more jobs in adaptor. Giving all finished jobs to Manager");
 		manager.onJobExecuted(translatedJob, this);
 	    } catch (RemoteException e)
 	    {
 		logger.info("Problems with RMI", e);
 	    }
 	}
+	logger.info("Giving worker a new job");
 	return job.remove(0);
 
     }
 
     public void returnJob(String origin, String translation)
     {
+	logger.info("Got translation from worker: " + origin + ":" + translation + ". Saving");
 	translatedJob.put(origin, translation);
     }
 
     public void onKeyExpiration(String notDone)
     {
-	logger.info("Got key expiration call" + keyExpirationCallsCount);
+	logger.info("Got key expiration call number " + keyExpirationCallsCount);
 	job.add(notDone);
 	if (keyExpirationCallsCount == workersCount)
 	{
@@ -136,5 +137,4 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
     {
 	this.yandexKey = yandexKey;
     }
-
 }

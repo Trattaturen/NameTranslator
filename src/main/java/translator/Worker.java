@@ -22,6 +22,7 @@ public class Worker implements Runnable
 {
     final static Logger logger = Logger.getLogger(Worker.class);
 
+    private static final int YANDEX_LIMIT_CODE = 404;
     private static final MediaType REQUEST_MEDIA_TYPE_JSON = MediaType.parse("application/x-www-form-urlencoded");
     // Constants, needed to parse request/response
     private static final String TEXT_KEY_REQUEST = "text=";
@@ -65,13 +66,12 @@ public class Worker implements Runnable
 		response = client.newCall(request).execute();
 		int responseCode = response.code();
 
-		if (responseCode == 404)
+		if (responseCode == YANDEX_LIMIT_CODE)
 		{
 		    logger.error("Yandex API limit have been reached");
 		    adaptorImpl.onKeyExpiration(toTranslate);
 		    break;
 		}
-
 		logger.debug("Parsing response");
 		JsonObject sourceObject = jsonParser.parse(response.body().string()).getAsJsonObject();
 		logger.info("source obj " + sourceObject);
