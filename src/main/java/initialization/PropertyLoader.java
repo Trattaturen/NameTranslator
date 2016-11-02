@@ -102,8 +102,8 @@ public class PropertyLoader
 	return property.getProperty("file.path");
     }
 
-    public Long getBatchSize()
+    public int getJobCount()
     {
-	return Long.valueOf(property.getProperty("batch.size"));
+	return Integer.valueOf(property.getProperty("job.count"));
     }
 }

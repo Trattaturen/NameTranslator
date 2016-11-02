@@ -10,7 +10,7 @@ public interface Manager extends Remote
 {
     void addAdaptor(Adaptor adaptor) throws RemoteException;
 
-    void onJobExecuted(Map<String, String> job) throws RemoteException;
+    void onJobExecuted(Map<String, String> job, Adaptor adaptor) throws RemoteException;
 
     String onKeyLimitReached(String apiKey) throws RemoteException;
 }

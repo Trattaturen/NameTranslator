@@ -1,6 +1,6 @@
 package Manager;
 
-import dao.DaoMySql;
+import base.util.DaoMySql;
 import initialization.PropertyLoader;
 import initialization.RedisFiller;
 import org.apache.log4j.Logger;
