@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -26,7 +27,7 @@ public class DaoMySql
 	this.pass = pass;
     }
 
-    public void add(String originalName, String translatedName)
+    public void add(List<String> originalName, List<String> translatedName)
     {
 	logger.debug("Adding article to MySql");
 	Connection connection = null;
@@ -36,15 +37,20 @@ public class DaoMySql
 	    logger.debug("Getting JDBC driver");
 	    Class.forName(driver);
 
-	    logger.info("Getting connection url " + url + " user " + user + " pass "  + pass);
+	    logger.info("Getting connection url " + url + " user " + user + " pass " + pass);
 	    connection = DriverManager.getConnection(url, user, pass);
 
 	    logger.debug("Preparing statement");
 	    PreparedStatement preparedStatement = connection.prepareStatement(ADD_NAMES_QUERY);
 
 	    logger.debug("Setting statement parameters");
-	    preparedStatement.setString(1, originalName);
-	    preparedStatement.setString(2, translatedName);
+	    for (int i = 0; i < originalName.size(); i++)
+	    {
+		preparedStatement.setString(1, originalName.get(i));
+		preparedStatement.setString(2, translatedName.get(i));
+		preparedStatement.addBatch();
+	    }
+	    preparedStatement.executeBatch();
 
 	    logger.debug("Executing statement");
 	    preparedStatement.executeUpdate();
