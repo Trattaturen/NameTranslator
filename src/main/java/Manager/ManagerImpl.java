@@ -1,8 +1,8 @@
 package Manager;
 
 import base.util.DaoMySql;
-import initialization.PropertyLoader;
-import initialization.RedisFiller;
+import base.util.PropertyLoader;
+import base.util.RedisFiller;
 import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
 import translator.Worker;

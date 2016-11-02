@@ -1,4 +1,4 @@
-package initialization;
+package base.util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -106,4 +106,10 @@ public class PropertyLoader
     {
 	return Integer.valueOf(property.getProperty("job.count"));
     }
+
+    public String getManagerRmiHost() { return property.getProperty("manager.rmi.host");}
+
+    public String getManagerRmiPort() { return property.getProperty("manager.rmi.port");}
+
+    public String getManagerRmiName() { return property.getProperty("manager.rmi.name");}
 }
