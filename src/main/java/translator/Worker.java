@@ -56,7 +56,8 @@ public class Worker implements Runnable
 	    logger.info("To translate " + toTranslate);
 	    List<String> translated = null;
 	    logger.debug("Creating request body");
-	    String translateRequest = TEXT_KEY_REQUEST + String.join("|", toTranslate);
+	    String translateRequest = TEXT_KEY_REQUEST + String.join(" | ", toTranslate);
+	    logger.info("translateRequest " + translateRequest);
 	    RequestBody body = RequestBody.create(REQUEST_MEDIA_TYPE_JSON, translateRequest);
 	    logger.debug("Building request");
 	    Request request = new Request.Builder().url(yandexUrl + yandexKey).post(body).build();
@@ -77,6 +78,7 @@ public class Worker implements Runnable
 
 		logger.debug("Parsing response");
 		JsonObject sourceObject = jsonParser.parse(response.body().string()).getAsJsonObject();
+		logger.info("source obj " + sourceObject);
 		translated = Arrays.asList(sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString().split("\\|"));
 	    	logger.info("Translated : " + translated);
 		Collections.reverse(translated);
