@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 
 import base.adaptor.Adaptor;
 import base.manager.Manager;
-import translator.Worker;
+import base.adaptor.worker.Worker;
 
 public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 {
