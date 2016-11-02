@@ -53,7 +53,7 @@ public class DaoMySql
 	    preparedStatement.executeBatch();
 
 	    logger.debug("Executing statement");
-	    preparedStatement.executeUpdate();
+//	    preparedStatement.executeUpdate();
 
 	} catch (SQLException se)
 	{

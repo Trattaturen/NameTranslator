@@ -50,8 +50,10 @@ public class Worker implements Runnable
     public void run()
     {
 	List<String> toTranslate;
+	logger.info("worker started");
 	while ((toTranslate = manager.getNextWord()) != null)
 	{
+	    logger.info("To translate " + toTranslate);
 	    List<String> translated = null;
 	    logger.debug("Creating request body");
 	    String translateRequest = TEXT_KEY_REQUEST + String.join("|", toTranslate);
@@ -59,6 +61,7 @@ public class Worker implements Runnable
 	    logger.debug("Building request");
 	    Request request = new Request.Builder().url(yandexUrl + yandexKey).post(body).build();
 
+	    logger.info("request builded : " + request.toString());
 	    Response response;
 	    try
 	    {
@@ -75,12 +78,15 @@ public class Worker implements Runnable
 		logger.debug("Parsing response");
 		JsonObject sourceObject = jsonParser.parse(response.body().string()).getAsJsonObject();
 		translated = Arrays.asList(sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString().split("\\|"));
+	    	logger.info("Translated : " + translated);
+		Collections.reverse(translated);
 		logger.debug("Got request from yandex");
 	    } catch (IOException e)
 	    {
 		logger.warn("Exception while translating", e);
 	    }
-	    manager.submitTranslation(toTranslate, Collections.reverse(translated));
+
+	    manager.submitTranslation(toTranslate, translated);
 	}
 
     }

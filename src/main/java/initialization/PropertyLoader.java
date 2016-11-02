@@ -101,4 +101,9 @@ public class PropertyLoader
     {
 	return property.getProperty("file.path");
     }
+
+    public Long getBatchSize()
+    {
+	return Long.valueOf(property.getProperty("batch.size"));
+    }
 }

@@ -7,6 +7,8 @@ import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
 import translator.Worker;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
@@ -60,19 +62,27 @@ public class ManagerImpl implements Manager
     }
 
     @Override
-    public void submitTranslation(String origin, String translation)
+    public void submitTranslation(List<String> origins, List<String> translations)
     {
 	lock.lock();
-	this.dao.add(origin, translation);
-        logger.info("Manager submitted translation " + translation + " for origin " + origin);
+	if (origins.size() != translations.size()) {
+	    logger.error("Translations size is not equals to origins size!!!");
+	    return;
+	}
+	this.dao.add(origins, translations);
 	lock.unlock();
     }
 
     @Override
-    public String getNextWord()
+    public List<String> getNextWord()
     {
 	lock.lock();
-	String nextWord = this.jedis.spop(this.propertyLoader.getQueueName());
+	List<String> nextWord = new ArrayList<>();
+
+	for(int i = 0; i < this.propertyLoader.getBatchSize(); i++) {
+		nextWord.add(this.jedis.spop(this.propertyLoader.getQueueName()));
+	}
+
 	if (jedis.dbSize() == 0) {
 	    jedis.close();
 	    service.shutdown();
