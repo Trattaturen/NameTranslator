@@ -46,12 +46,12 @@ public class Worker implements Runnable
     @Override
     public void run()
     {
-	String toTranslate;
+	String[] toTranslate;
 	while ((toTranslate = manager.getNextWord()) != null)
 	{
 	    String translated = null;
 	    logger.debug("Creating request body");
-	    String translateRequest = TEXT_KEY_REQUEST + toTranslate;
+	    String translateRequest = TEXT_KEY_REQUEST + String.join("|", toTranslate);
 	    RequestBody body = RequestBody.create(REQUEST_MEDIA_TYPE_JSON, translateRequest);
 	    logger.debug("Building request");
 	    Request request = new Request.Builder().url(yandexUrl + yandexKey).post(body).build();
