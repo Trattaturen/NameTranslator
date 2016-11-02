@@ -21,7 +21,7 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 {
     final static Logger logger = Logger.getLogger(AdaptorImpl.class);
     private static final long serialVersionUID = 1L;
-    private static final String DEFAULT_MANAGER_RMI_HOST = "rmi://192.168.1.54:1099/Manager";
+    private static final String DEFAULT_MANAGER_RMI_HOST = "192.168.1.242:1099/NameTranslatorManager";
 
     private String yandexUrl;
     private String yandexKey;
