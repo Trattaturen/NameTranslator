@@ -37,6 +37,8 @@ public class Worker implements Runnable
 
     public Worker(String yandexUrl, String yandexKey, AdaptorImpl adaptorImpl) {
 	logger.debug("Initializing Translator");
+	this.yandexUrl = yandexUrl;
+	this.yandexKey = yandexKey;
 	this.jsonParser = new JsonParser();
 	this.client = new OkHttpClient();
 	this.adaptorImpl = adaptorImpl;
@@ -46,19 +48,19 @@ public class Worker implements Runnable
     public void run()
     {
 	String toTranslate;
-	logger.info("worker started");
+	logger.info("worker started " + Thread.currentThread().getName());
 	while ((toTranslate = adaptorImpl.getNextJob()) != null)
 	{
-	    logger.info("To translate " + toTranslate);
+	    logger.debug("To translate " + toTranslate);
 	    String translated = null;
 	    logger.debug("Creating request body");
 	    String translateRequest = TEXT_KEY_REQUEST + toTranslate;
-	    logger.info("translateRequest " + translateRequest);
+	    logger.debug("translateRequest " + translateRequest);
 	    RequestBody body = RequestBody.create(REQUEST_MEDIA_TYPE_JSON, translateRequest);
-	    logger.debug("Building request");
+	    logger.debug("Building request " + "url: " + yandexUrl + " key: " + yandexKey);
 	    Request request = new Request.Builder().url(yandexUrl + yandexKey).post(body).build();
 
-	    logger.info("request builded : " + request.toString());
+	    logger.debug("request builded : " + request.toString());
 	    Response response;
 	    try
 	    {
@@ -74,16 +76,17 @@ public class Worker implements Runnable
 		}
 		logger.debug("Parsing response");
 		JsonObject sourceObject = jsonParser.parse(response.body().string()).getAsJsonObject();
-		logger.info("source obj " + sourceObject);
+		logger.debug("source obj " + sourceObject);
 		translated = sourceObject.getAsJsonArray(TEXT_KEY_RESPONSE).get(0).getAsString();
-		logger.info("Translated : " + translated);
+		logger.debug("Translated : " + translated);
 	    } catch (IOException e)
 	    {
 		logger.warn("Exception while translating", e);
 	    }
-
+	    logger.info("worker giving finished job to adaptor " + toTranslate + ":" + translated + Thread.currentThread().getName());
 	    this.adaptorImpl.returnJob(toTranslate, translated);
 	}
+	logger.info("Worker shutting down! " + Thread.currentThread().getName());
 
     }
 }

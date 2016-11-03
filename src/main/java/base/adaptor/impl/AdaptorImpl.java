@@ -10,18 +10,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
 import base.adaptor.Adaptor;
-import base.manager.Manager;
 import base.adaptor.worker.Worker;
+import base.manager.Manager;
 
 public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 {
     final static Logger logger = Logger.getLogger(AdaptorImpl.class);
     private static final long serialVersionUID = 1L;
-    private static final String DEFAULT_MANAGER_RMI_HOST = "192.168.1.242:1099/NameTranslatorManager";
+    private static final String DEFAULT_MANAGER_RMI_HOST = "rmi://192.168.1.242:1098/NameTranslatorManager";
 
     private String yandexUrl;
     private String yandexKey;
@@ -40,7 +41,7 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 	try
 	{
 	    manager = (Manager) Naming.lookup(managerHost);
-	    logger.info("Adding aaptor to manager");
+	    logger.info("Adding adaptor to manager");
 	    manager.addAdaptor(this);
 	} catch (MalformedURLException | RemoteException | NotBoundException e)
 	{
@@ -82,24 +83,35 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
 
     public synchronized String getNextJob()
     {
-	logger.info("Searching for new job for worker");
-	if (job.isEmpty())
+	logger.info("Searching for new job for worker. Currently in a list: " + job.size());
+	if (!job.isEmpty())
+	{
+	    logger.info("Giving worker a new job");
+	    return job.remove(0);
+
+	} else
 	{
 	    try
 	    {
-		logger.info("No more jobs in adaptor. Giving all finished jobs to Manager");
+		logger.info("Job list is empty. Shutting down service");
+		service.awaitTermination(1, TimeUnit.SECONDS);
+		logger.info("Service shutted down");
+		logger.info("Giving all finished jobs to Manager. Size is " + translatedJob.size());
 		manager.onJobExecuted(translatedJob, this);
+		translatedJob.clear();
 	    } catch (RemoteException e)
 	    {
 		logger.info("Problems with RMI", e);
+
+	    } catch (InterruptedException e)
+	    {
+		logger.info("Problems with ExecutorService", e);
 	    }
 	}
-	logger.info("Giving worker a new job");
-	return job.remove(0);
-
+	return null;
     }
 
-    public void returnJob(String origin, String translation)
+    public synchronized void returnJob(String origin, String translation)
     {
 	logger.info("Got translation from worker: " + origin + ":" + translation + ". Saving");
 	translatedJob.put(origin, translation);
@@ -136,5 +148,11 @@ public class AdaptorImpl extends UnicastRemoteObject implements Adaptor
     public void setYandexKey(String yandexKey) throws RemoteException
     {
 	this.yandexKey = yandexKey;
+    }
+
+    public static void main(String[] args) throws RemoteException
+    {
+	@SuppressWarnings("unused")
+	Adaptor adaptor = new AdaptorImpl();
     }
 }
