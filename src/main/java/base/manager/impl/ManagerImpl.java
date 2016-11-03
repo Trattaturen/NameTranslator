@@ -72,24 +72,26 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
     {
         String freshKey = "";
         logger.info("Demanding new key!!!!!!!!!!!!!!!!!");
-        System.out.println("Demanding new key!!!!!!!!!!!!!!!!!");
         return freshKey;
     }
 
     private void giveJobToAdaptor(Adaptor adaptor) throws RemoteException
     {
-        logger.info("Pushing job to adaptor");
         List<String> nextJob = new ArrayList<>();
         String word;
-        int counter = 0;
 
-        while ((word = this.jedis.spop(this.queueName)) != null && counter < jobCount) {
-            nextJob.add(word);
-            counter++;
+        for (int i = 0; i < jobCount; i++) {
+            word = this.jedis.spop(this.queueName);
+            if (word != null) {
+                nextJob.add(word);
+            } else {
+                break;
+            }
         }
 
-        if (nextJob.size() > 0) {
+        if (!nextJob.isEmpty()) {
             adaptor.executeJob(nextJob);
+            logger.info("Pushing job to adaptor " + nextJob.size());
         }
     }
 
@@ -109,13 +111,13 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
     }
 
     private void pushResultToMysql(Map<String, String> result) {
+        logger.info("Pushing to SQL count : " + result.size());
         Map<String, String> subResult = new HashMap<>();
 
         for (Map.Entry<String, String> entry : result.entrySet()) {
-            if (subResult.size() >= 100) {
+            if (subResult.size() >= 500) {
                 Thread pusher = new Thread(new DaoMySql(subResult));
                 pusher.start();
-                logger.info("Pushing to SQL count : " + subResult.size());
                 subResult = new HashMap<>();
             }
             subResult.put(entry.getKey(), entry.getValue());
@@ -124,7 +126,6 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
         if(!subResult.isEmpty()) {
             Thread pusher = new Thread(new DaoMySql(subResult));
             pusher.start();
-            logger.info("Pushing to SQL count : " + subResult.size());
         }
     }
 }

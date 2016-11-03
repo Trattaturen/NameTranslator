@@ -53,8 +53,8 @@ public class DaoMySql implements Runnable
 		preparedStatement.setString(2, entry.getValue());
 		preparedStatement.addBatch();
 	    }
-	    preparedStatement.executeBatch();
-
+	    int updatedCount = preparedStatement.executeBatch().length;
+	    logger.info("--Dao--- Batch updated count " + updatedCount);
 	    logger.debug("Executing statement");
 //	    preparedStatement.executeUpdate();
 
