@@ -4,6 +4,7 @@ import base.adaptor.Adaptor;
 import base.util.DaoMySql;
 import base.util.PropertyLoader;
 import base.util.RedisFiller;
+import com.sun.corba.se.spi.activation.Server;
 import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
 
@@ -12,6 +13,7 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +44,7 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
                         this.propertyLoader.getFilePath())
                         .fillUpQueue();
 
-        exportToRmi();
+//        exportToRmi();
     }
 
     @Override public void addAdaptor(Adaptor adaptor) throws RemoteException
@@ -54,11 +56,14 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
         giveJobToAdaptor(adaptor);
     }
 
-    @Override public void onJobExecuted(Map<String, String> job, Adaptor adaptor) throws RemoteException
+    @Override public void onJobExecuted(Map<String, String> result, Adaptor adaptor) throws RemoteException
     {
-        logger.info("On job executed - pushing to sql");
-        Thread pushToSql = new Thread(new DaoMySql(job));
-        pushToSql.start();
+        if (result.isEmpty()) {
+            logger.info("Result is empty");
+            return;
+        }
+
+        pushResultToMysql(result);
 
         giveJobToAdaptor(adaptor);
     }
@@ -80,6 +85,7 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
 
         while ((word = this.jedis.spop(this.queueName)) != null && counter < jobCount) {
             nextJob.add(word);
+            counter++;
         }
 
         if (nextJob.size() > 0) {
@@ -99,6 +105,26 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
         } catch (RemoteException | MalformedURLException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private void pushResultToMysql(Map<String, String> result) {
+        Map<String, String> subResult = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : result.entrySet()) {
+            if (subResult.size() >= 100) {
+                Thread pusher = new Thread(new DaoMySql(subResult));
+                pusher.start();
+                logger.info("Pushing to SQL count : " + subResult.size());
+                subResult = new HashMap<>();
+            }
+            subResult.put(entry.getKey(), entry.getValue());
+        }
+
+        if(!subResult.isEmpty()) {
+            Thread pusher = new Thread(new DaoMySql(subResult));
+            pusher.start();
+            logger.info("Pushing to SQL count : " + subResult.size());
         }
     }
 }
