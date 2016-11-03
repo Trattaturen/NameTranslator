@@ -13,4 +13,6 @@ public interface Manager extends Remote
     void onJobExecuted(Map<String, String> job, Adaptor adaptor) throws RemoteException;
 
     String onKeyLimitReached(String apiKey) throws RemoteException;
+
+    void start() throws RemoteException;
 }

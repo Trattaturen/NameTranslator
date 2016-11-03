@@ -1,16 +1,18 @@
 package base.manager.impl;
 
 import base.adaptor.Adaptor;
+import base.util.ApiKeysController;
 import base.util.DaoMySql;
 import base.util.PropertyLoader;
 import base.util.RedisFiller;
-import com.sun.corba.se.spi.activation.Server;
 import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,107 +27,130 @@ public class ManagerImpl extends UnicastRemoteObject implements base.manager.Man
     private Jedis jedis;
     private String queueName;
     private int jobCount;
+    private int batchSize;
 
     public ManagerImpl() throws RemoteException
     {
-        init();
+	init();
     }
 
-    private void init() {
-        this.propertyLoader = PropertyLoader.getInstance();
+    public void start()
+    {
+	//fill queue with data
+	new RedisFiller(jedis,
+			this.propertyLoader.getQueueName(),
+			this.propertyLoader.getFilePath()).fillUpQueue();
+	exportToRmi();
+    }
 
-        this.queueName = this.propertyLoader.getQueueName();
-        this.jobCount = this.propertyLoader.getJobCount();
+    private void init()
+    {
+	this.propertyLoader = PropertyLoader.getInstance();
 
-        this.jedis = new Jedis(this.propertyLoader.getQueueHost());
-        //fill queue with data
-        new RedisFiller(jedis,
-                        this.propertyLoader.getQueueName(),
-                        this.propertyLoader.getFilePath())
-                        .fillUpQueue();
+	this.batchSize = this.propertyLoader.getBatchSize();
+	this.queueName = this.propertyLoader.getQueueName();
+	this.jobCount = this.propertyLoader.getJobCount();
 
-//        exportToRmi();
+	this.jedis = new Jedis(this.propertyLoader.getQueueHost());
     }
 
     @Override public void addAdaptor(Adaptor adaptor) throws RemoteException
     {
-        logger.info("Adaptor connected");
-        adaptor.init(this.propertyLoader.getYandexUrl(),
-                        this.propertyLoader.getYandexKey(),
-                        this.propertyLoader.getWorkersCount());
-        giveJobToAdaptor(adaptor);
+	logger.info("Adaptor connected");
+	adaptor.init(this.propertyLoader.getYandexUrl(), this.propertyLoader.getYandexKey(), this.propertyLoader.getWorkersCount());
+	giveJobToAdaptor(adaptor);
     }
 
     @Override public void onJobExecuted(Map<String, String> result, Adaptor adaptor) throws RemoteException
     {
-        if (result.isEmpty()) {
-            logger.info("Result is empty");
-            return;
-        }
+	if (result.isEmpty())
+	{
+	    logger.info("Result is empty");
+	    return;
+	}
 
-        pushResultToMysql(result);
+	pushResultToMysql(result);
 
-        giveJobToAdaptor(adaptor);
+	giveJobToAdaptor(adaptor);
     }
 
     @Override public String onKeyLimitReached(String apiKey) throws RemoteException
     {
-        String freshKey = "";
-        logger.info("Demanding new key!!!!!!!!!!!!!!!!!");
-        return freshKey;
+	logger.info("Demanding new key!!!!!!!!!!!!!!!!!");
+	String freshKey = null;
+	try
+	{
+	    freshKey = new ApiKeysController().getFreshKey();
+	} catch (IOException e)
+	{
+	    e.printStackTrace();
+	}
+	logger.info("Limited key : " + apiKey);
+	logger.info("Fresh key : " + freshKey);
+	return freshKey;
     }
 
     private void giveJobToAdaptor(Adaptor adaptor) throws RemoteException
     {
-        List<String> nextJob = new ArrayList<>();
-        String word;
+	List<String> nextJob = new ArrayList<>();
+	String word;
 
-        for (int i = 0; i < jobCount; i++) {
-            word = this.jedis.spop(this.queueName);
-            if (word != null) {
-                nextJob.add(word);
-            } else {
-                break;
-            }
-        }
+	for (int i = 0; i < jobCount; i++)
+	{
+	    word = this.jedis.spop(this.queueName);
+	    if (word != null)
+	    {
+		nextJob.add(word);
+	    } else
+	    {
+		break;
+	    }
+	}
 
-        if (!nextJob.isEmpty()) {
-            adaptor.executeJob(nextJob);
-            logger.info("Pushing job to adaptor " + nextJob.size());
-        }
+	if (!nextJob.isEmpty())
+	{
+	    adaptor.executeJob(nextJob);
+	    logger.info("Pushing job to adaptor " + nextJob.size());
+	}
     }
 
-    public void exportToRmi()
+    private void exportToRmi()
     {
-        String address = "//" + this.propertyLoader.getManagerRmiHost() + ":"
-                        + this.propertyLoader.getManagerRmiPort() + "/"
-                        + this.propertyLoader.getManagerRmiName();
-        try
-        {
-            Naming.rebind(address, this);
-            logger.info("Manager has been exported to RMI: " + address);
-        } catch (RemoteException | MalformedURLException e)
-        {
-            e.printStackTrace();
-        }
+        String host = this.propertyLoader.getManagerRmiHost();
+	String address ="rmi://" + this.propertyLoader.getManagerRmiHost() + ":"
+			+ this.propertyLoader.getManagerRmiPort()
+			+ "/" + this.propertyLoader.getManagerRmiName();
+	try
+	{
+	    System.setProperty("java.rmi.server.hostname", host);
+	    LocateRegistry.createRegistry(1098);
+	    Naming.rebind(address, this);
+	} catch (RemoteException | MalformedURLException e)
+	{
+	    e.printStackTrace();
+	}
     }
 
-    private void pushResultToMysql(Map<String, String> result) {
-        logger.info("Pushing to SQL count : " + result.size());
-        Map<String, String> subResult = new HashMap<>();
+    private void pushResultToMysql(Map<String, String> result)
+    {
+	logger.info("Pushing to SQL count : " + result.size());
+	Map<String, String> subResult = new HashMap<>();
 
-        for (Map.Entry<String, String> entry : result.entrySet()) {
-            if (subResult.size() >= 500) {
-                Thread pusher = new Thread(new DaoMySql(subResult));
-                pusher.start();
-                subResult = new HashMap<>();
-            }
-            subResult.put(entry.getKey(), entry.getValue());
-        }
+	for (Map.Entry<String, String> entry : result.entrySet())
+	{
+	    if (subResult.size() >= this.batchSize)
+	    {
+		Thread pusher = new Thread(new DaoMySql(subResult));
+		pusher.start();
+		subResult = new HashMap<>();
+	    }
+	    subResult.put(entry.getKey(), entry.getValue());
+	}
 
-        if(!subResult.isEmpty()) {
-            Thread pusher = new Thread(new DaoMySql(subResult));
-            pusher.start();
-        }
+	if (!subResult.isEmpty())
+	{
+	    Thread pusher = new Thread(new DaoMySql(subResult));
+	    pusher.start();
+	}
     }
 }

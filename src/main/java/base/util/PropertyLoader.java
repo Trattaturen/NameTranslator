@@ -22,7 +22,8 @@ public class PropertyLoader
 
     }
 
-    private PropertyLoader() {
+    private PropertyLoader()
+    {
 	init();
     }
 
@@ -107,9 +108,23 @@ public class PropertyLoader
 	return Integer.valueOf(property.getProperty("job.count"));
     }
 
-    public String getManagerRmiHost() { return property.getProperty("manager.rmi.host");}
+    public String getManagerRmiHost()
+    {
+	return property.getProperty("manager.rmi.host");
+    }
 
-    public String getManagerRmiPort() { return property.getProperty("manager.rmi.port");}
+    public String getManagerRmiPort()
+    {
+	return property.getProperty("manager.rmi.port");
+    }
 
-    public String getManagerRmiName() { return property.getProperty("manager.rmi.name");}
+    public String getManagerRmiName()
+    {
+	return property.getProperty("manager.rmi.name");
+    }
+
+    public int getBatchSize()
+    {
+	return Integer.valueOf(property.getProperty("sql.batch.size"));
+    }
 }
